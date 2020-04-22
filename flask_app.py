@@ -11,6 +11,8 @@ logging.basicConfig(level=logging.INFO)
 
 sessionStorage = {}
 
+rabbit = False
+
 
 @app.route('/post', methods=['POST'])
 def main():
@@ -31,6 +33,7 @@ def main():
 
 
 def handle_dialog(req, res):
+    global rabbit
     user_id = req['session']['user_id']
 
     if req['session']['new']:
@@ -44,7 +47,6 @@ def handle_dialog(req, res):
         res['response']['text'] = 'Привет! Купи слона!'
         res['response']['buttons'] = get_suggests(user_id)
         return
-
     if req['request']['original_utterance'].lower() in [
         'ладно',
         'куплю',
@@ -53,15 +55,24 @@ def handle_dialog(req, res):
         'я покупаю',
         'я куплю'
     ]:
-        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
-        res['response']['end_session'] = True
+        if rabbit:
+            res['response']['text'] = 'Кролика можно найти на Яндекс.Маркете!'
+            rabbit = False
+        else:
+            res['response']['text'] = 'Слона можно найти на Яндекс.Маркете! А может купишь кролика?'
+            rabbit = True
         return
-    res['response']['text'] = \
-        f"Все говорят '{req['request']['original_utterance']}', а ты купи слона!"
+    if not rabbit:
+        res['response']['text'] = \
+            f"Все говорят '{req['request']['original_utterance']}', а ты купи слона!"
+    else:
+        res['response']['text'] = \
+            f"Все говорят '{req['request']['original_utterance']}', а ты купи кролика!"
     res['response']['buttons'] = get_suggests(user_id)
 
 
 def get_suggests(user_id):
+    global rabbit
     session = sessionStorage[user_id]
 
     suggests = [
@@ -73,11 +84,18 @@ def get_suggests(user_id):
     sessionStorage[user_id] = session
 
     if len(suggests) < 2:
-        suggests.append({
-            "title": "Ладно",
-            "url": "https://market.yandex.ru/search?text=слон",
-            "hide": True
-        })
+        if not rabbit:
+            suggests.append({
+                "title": "Ладно",
+                "url": "https://market.yandex.ru/search?text=слон",
+                "hide": True
+            })
+        else:
+            suggests.append({
+                "title": "Ладно",
+                "url": "https://market.yandex.ru/search?text=кролик",
+                "hide": True
+            })
 
     return suggests
 
