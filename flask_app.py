@@ -57,9 +57,18 @@ def handle_dialog(req, res):
     ]:
         if rabbit:
             res['response']['text'] = 'Кролика можно найти на Яндекс.Маркете!'
+            res['response']['end_session'] = True
             rabbit = False
         else:
             res['response']['text'] = 'Слона можно найти на Яндекс.Маркете! А может купишь кролика?'
+            sessionStorage[user_id] = {
+                'suggests': [
+                    "Не хочу.",
+                    "Не буду.",
+                    "Отстань!",
+                ]
+            }
+            res['response']['buttons'] = get_suggests(user_id)
             rabbit = True
         return
     if not rabbit:
